@@ -1,0 +1,2218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>TriEV — Roadside Assistance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  /* ── DESIGN SYSTEM ─────────────────────────────────────────── */
+  :root {
+    --bg: #0a0f0d;
+    --bg2: #111710;
+    --bg3: #182318;
+    --card: #141c14;
+    --border: #1f2e1f;
+    --border2: #2a3d2a;
+    --accent: #00e87a;
+    --accent2: #00b85e;
+    --accent-dim: rgba(0,232,122,0.12);
+    --accent-glow: rgba(0,232,122,0.25);
+    --warn: #ffa940;
+    --err: #ff5c5c;
+    --text: #e8f0e8;
+    --text2: #8a9e8a;
+    --text3: #4a5e4a;
+    --font-display: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --r: 16px;
+    --r2: 24px;
+    --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { background: var(--bg); }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* Phone shell */
+  .phone {
+    width: 100%;
+    max-width: 420px;
+    min-height: 100vh;
+    background: var(--bg2);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── SCREENS ─────────────────────────────────────────────── */
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(40px);
+    transition: opacity 0.32s cubic-bezier(0.4,0,0.2,1),
+                transform 0.32s cubic-bezier(0.4,0,0.2,1);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .screen.active {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateX(0);
+  }
+  .screen.exit {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+
+  /* ── SPLASH ──────────────────────────────────────────────── */
+  #splash {
+    background: var(--bg);
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+  }
+  .splash-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    animation: splashIn 0.8s cubic-bezier(0.4,0,0.2,1) both;
+  }
+  @keyframes splashIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .logo-mark {
+    width: 72px; height: 72px;
+    background: var(--accent);
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 40px var(--accent-glow), 0 0 80px rgba(0,232,122,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+  .logo-mark::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+  }
+  .logo-mark svg { width: 40px; height: 40px; }
+  .logo-name {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: var(--text);
+  }
+  .logo-name span { color: var(--accent); }
+  .logo-tagline {
+    font-size: 13px;
+    color: var(--text2);
+    letter-spacing: 0.5px;
+  }
+  .splash-pulse {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    border: 1px solid var(--accent-dim);
+    position: absolute;
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  .splash-pulse:nth-child(2) { animation-delay: 0.8s; }
+  .splash-pulse:nth-child(3) { animation-delay: 1.6s; }
+  @keyframes pulse {
+    0% { transform: scale(0.8); opacity: 0.6; }
+    100% { transform: scale(2.5); opacity: 0; }
+  }
+
+  /* ── AUTH SCREEN ─────────────────────────────────────────── */
+  #auth {
+    padding: 0;
+    background: var(--bg2);
+  }
+  .auth-hero {
+    background: linear-gradient(160deg, #0f1f10 0%, #0a0f0d 100%);
+    padding: 60px 28px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .auth-hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 240px; height: 240px;
+    background: radial-gradient(circle, rgba(0,232,122,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .auth-hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,232,122,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,232,122,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .auth-hero h1 {
+    font-family: var(--font-display);
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    position: relative;
+    z-index: 1;
+  }
+  .auth-hero h1 em { color: var(--accent); font-style: normal; }
+  .auth-hero p {
+    font-size: 14px;
+    color: var(--text2);
+    margin-top: 12px;
+    line-height: 1.6;
+    position: relative;
+    z-index: 1;
+  }
+  .auth-body {
+    padding: 32px 24px 40px;
+    flex: 1;
+  }
+  .auth-body h2 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+
+  /* ── FORM ELEMENTS ───────────────────────────────────────── */
+  .field {
+    margin-bottom: 16px;
+    position: relative;
+  }
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 8px;
+  }
+  .field input, .field textarea, .field select {
+    width: 100%;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--r);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    padding: 14px 16px;
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    appearance: none;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+  .field input::placeholder, .field textarea::placeholder {
+    color: var(--text3);
+  }
+  .field textarea { resize: none; min-height: 90px; line-height: 1.5; }
+  .field select option { background: #1a2a1a; }
+
+  .field-prefix {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text2);
+    font-size: 15px;
+    pointer-events: none;
+    margin-top: 12px;
+  }
+  .field.has-prefix input { padding-left: 44px; }
+
+  /* OTP */
+  .otp-row {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+  }
+  .otp-row input {
+    width: 52px;
+    height: 56px;
+    text-align: center;
+    font-size: 22px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    padding: 0;
+    border-radius: 14px;
+  }
+
+  /* ── BUTTONS ─────────────────────────────────────────────── */
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 16px;
+    border-radius: var(--r);
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    transition: all var(--transition);
+    position: relative;
+    overflow: hidden;
+  }
+  .btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0);
+    transition: background var(--transition);
+  }
+  .btn:hover::after { background: rgba(255,255,255,0.06); }
+  .btn:active { transform: scale(0.98); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #021206;
+  }
+  .btn-primary:hover { background: #00ff88; }
+
+  .btn-ghost {
+    background: var(--card);
+    color: var(--text);
+    border: 1.5px solid var(--border);
+  }
+  .btn-icon {
+    width: 44px; height: 44px;
+    padding: 0;
+    border-radius: 12px;
+    flex-shrink: 0;
+  }
+
+  /* ── TOP BAR ─────────────────────────────────────────────── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 20px 16px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(12px);
+  }
+  .topbar-logo {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .topbar-logo span { color: var(--accent); }
+  .topbar-back {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    color: var(--text);
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition);
+    flex-shrink: 0;
+  }
+  .topbar-back:hover { border-color: var(--accent); color: var(--accent); }
+  .topbar-title {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
+    flex: 1;
+  }
+
+  /* ── HOME SCREEN ─────────────────────────────────────────── */
+  #home { background: var(--bg2); }
+
+  .home-header {
+    padding: 24px 20px 20px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+  }
+  .home-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .user-greeting .label {
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 2px;
+  }
+  .user-greeting .name {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .user-greeting .name span { color: var(--accent); }
+  .avatar {
+    width: 44px; height: 44px;
+    background: var(--accent-dim);
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--accent);
+    cursor: pointer;
+  }
+  .ev-status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 12px 16px;
+  }
+  .ev-battery {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text2);
+  }
+  .battery-icon {
+    width: 28px; height: 14px;
+    border: 1.5px solid var(--text3);
+    border-radius: 3px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 2px;
+  }
+  .battery-icon::after {
+    content: '';
+    position: absolute;
+    right: -5px; top: 50%;
+    transform: translateY(-50%);
+    width: 3px; height: 6px;
+    background: var(--text3);
+    border-radius: 0 1px 1px 0;
+  }
+  .battery-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 1px;
+    transition: width 1s;
+  }
+  .ev-model { font-size: 13px; color: var(--text2); margin-left: auto; }
+  .ev-model strong { color: var(--text); }
+
+  /* Hero CTA */
+  .hero-cta {
+    margin: 20px;
+    background: linear-gradient(135deg, #0f2814 0%, #0a1a0f 100%);
+    border: 1.5px solid var(--border2);
+    border-radius: var(--r2);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .hero-cta:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .hero-cta::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(0,232,122,0.07) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .hero-cta-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(0,232,122,0.2);
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 100px;
+    margin-bottom: 12px;
+  }
+  .hero-cta h2 {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1.15;
+    margin-bottom: 8px;
+  }
+  .hero-cta p { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+  .hero-cta .btn-primary { width: auto; padding: 12px 24px; font-size: 14px; }
+  .hero-sos {
+    position: absolute;
+    top: 20px; right: 20px;
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, #ff4040, #cc2020);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 800;
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(255,64,64,0.4);
+    cursor: pointer;
+    animation: sosBreath 2s ease-in-out infinite;
+  }
+  @keyframes sosBreath {
+    0%, 100% { box-shadow: 0 4px 20px rgba(255,64,64,0.4); }
+    50% { box-shadow: 0 4px 32px rgba(255,64,64,0.7); }
+  }
+
+  /* Quick services */
+  .section { padding: 0 20px 20px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .section-link {
+    font-size: 13px;
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .service-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .service-item {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 14px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .service-item:hover {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    transform: translateY(-2px);
+  }
+  .service-item .icon {
+    font-size: 24px;
+    line-height: 1;
+  }
+  .service-item .label {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text2);
+    line-height: 1.3;
+  }
+
+  /* Tickets list */
+  .ticket-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--r);
+    padding: 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .ticket-card:hover { border-color: var(--border2); }
+  .ticket-icon-wrap {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .ticket-icon-wrap.status-SEARCHING { background: rgba(255,169,64,0.12); }
+  .ticket-icon-wrap.status-ASSIGNED { background: rgba(0,232,122,0.12); }
+  .ticket-icon-wrap.status-RESOLVED { background: rgba(100,100,100,0.15); }
+  .ticket-info { flex: 1; min-width: 0; }
+  .ticket-type {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ticket-meta { font-size: 12px; color: var(--text2); margin-top: 3px; }
+  .ticket-badge {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: 100px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .badge-SEARCHING { background: rgba(255,169,64,0.15); color: var(--warn); }
+  .badge-ASSIGNED  { background: var(--accent-dim); color: var(--accent); }
+  .badge-RESOLVED  { background: rgba(100,100,100,0.15); color: var(--text2); }
+  .badge-OPEN      { background: rgba(100,100,220,0.15); color: #a0a0ff; }
+
+  /* ── CREATE TICKET ───────────────────────────────────────── */
+  #create { background: var(--bg2); }
+
+  .create-body { padding: 20px; flex: 1; }
+
+  .issue-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .issue-option {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: var(--r);
+    padding: 16px 14px;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .issue-option:hover { border-color: var(--border2); }
+  .issue-option.selected {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .issue-option .icon { font-size: 24px; }
+  .issue-option .text { flex: 1; }
+  .issue-option .text .name { font-size: 13px; font-weight: 600; }
+  .issue-option .text .sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .issue-check {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all var(--transition);
+  }
+  .issue-option.selected .issue-check {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .issue-option.selected .issue-check::after {
+    content: '';
+    width: 5px; height: 5px;
+    background: #021206;
+    border-radius: 50%;
+  }
+
+  /* Location box */
+  .location-box {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--r);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .location-dot {
+    width: 10px; height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--accent-glow);
+    flex-shrink: 0;
+    animation: dotPulse 2s ease-in-out infinite;
+  }
+  @keyframes dotPulse {
+    0%, 100% { box-shadow: 0 0 8px var(--accent-glow); }
+    50% { box-shadow: 0 0 20px var(--accent-glow); }
+  }
+  .location-text { flex: 1; }
+  .location-text .addr { font-size: 13px; font-weight: 500; }
+  .location-text .coords { font-size: 11px; color: var(--text2); margin-top: 2px; font-family: monospace; }
+  .location-refresh {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px;
+    transition: transform 0.5s;
+  }
+  .location-refresh.spin { transform: rotate(360deg); }
+
+  /* Photo upload */
+  .photo-upload {
+    border: 2px dashed var(--border2);
+    border-radius: var(--r);
+    padding: 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition);
+    position: relative;
+    overflow: hidden;
+  }
+  .photo-upload:hover { border-color: var(--accent); background: var(--accent-dim); }
+  .photo-upload input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .photo-upload .up-icon { font-size: 28px; margin-bottom: 8px; }
+  .photo-upload .up-text { font-size: 13px; color: var(--text2); }
+  .photo-upload .up-text strong { color: var(--accent); }
+  .photo-preview {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .photo-thumb {
+    width: 68px; height: 68px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1.5px solid var(--border2);
+    position: relative;
+  }
+
+  /* Priority */
+  .priority-row {
+    display: flex;
+    gap: 8px;
+  }
+  .priority-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: var(--card);
+    color: var(--text2);
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: all var(--transition);
+    letter-spacing: 0.3px;
+  }
+  .priority-btn.selected.p-NORMAL { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .priority-btn.selected.p-HIGH { border-color: var(--warn); color: var(--warn); background: rgba(255,169,64,0.1); }
+  .priority-btn.selected.p-CRITICAL { border-color: var(--err); color: var(--err); background: rgba(255,92,92,0.1); }
+
+  /* Submit area */
+  .submit-area {
+    padding: 16px 20px 32px;
+    border-top: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .submit-est {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    padding: 0 2px;
+  }
+  .submit-est .label { font-size: 12px; color: var(--text2); }
+  .submit-est .val {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  /* ── SEARCHING SCREEN ────────────────────────────────────── */
+  #searching {
+    background: var(--bg);
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 40px 30px;
+  }
+  .radar-wrap {
+    position: relative;
+    width: 200px; height: 200px;
+    margin: 0 auto 40px;
+  }
+  .radar-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(0,232,122,0.2);
+    animation: radarExpand 2.4s ease-out infinite;
+  }
+  .radar-ring:nth-child(1) { inset: 40px; animation-delay: 0s; }
+  .radar-ring:nth-child(2) { inset: 20px; animation-delay: 0.6s; }
+  .radar-ring:nth-child(3) { inset: 0; animation-delay: 1.2s; }
+  @keyframes radarExpand {
+    0% { opacity: 0.8; transform: scale(0.8); }
+    100% { opacity: 0; transform: scale(1.4); }
+  }
+  .radar-center {
+    position: absolute;
+    inset: 70px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    box-shadow: 0 0 30px var(--accent-glow);
+  }
+  .radar-sweep {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent 70%, rgba(0,232,122,0.3) 100%);
+    animation: sweep 2s linear infinite;
+  }
+  @keyframes sweep { to { transform: rotate(360deg); } }
+  .searching-title {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+  .searching-sub { font-size: 14px; color: var(--text2); margin-bottom: 32px; }
+  .searching-stats {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-bottom: 40px;
+  }
+  .stat-pill {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 8px 16px;
+    font-size: 13px;
+    color: var(--text2);
+  }
+  .stat-pill strong { color: var(--accent); }
+  .searching-progress {
+    width: 100%;
+    height: 3px;
+    background: var(--card);
+    border-radius: 100px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .searching-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 100px;
+    animation: progressAnim 3s ease-in-out infinite;
+  }
+  @keyframes progressAnim {
+    0% { width: 0%; }
+    60% { width: 85%; }
+    100% { width: 100%; }
+  }
+  .searching-hint { font-size: 12px; color: var(--text3); }
+
+  /* ── ASSIGNED SCREEN ─────────────────────────────────────── */
+  #assigned { background: var(--bg2); }
+
+  .assigned-map {
+    height: 220px;
+    background: #0d1a0e;
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+  }
+  .map-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,232,122,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,232,122,0.04) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+  .map-route {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    width: 160px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    transform: translateX(-50%) rotate(-15deg);
+  }
+  .map-route::before {
+    content: '';
+    position: absolute;
+    right: -6px; top: -4px;
+    width: 10px; height: 10px;
+    background: #021206;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--accent-glow);
+    animation: techMove 3s ease-in-out infinite alternate;
+  }
+  @keyframes techMove {
+    from { right: 50px; }
+    to { right: -6px; }
+  }
+  .map-pin {
+    position: absolute;
+    bottom: 32px;
+    left: calc(50% - 80px);
+    font-size: 28px;
+    animation: pinBounce 1.5s ease-in-out infinite;
+  }
+  @keyframes pinBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+  .map-eta-chip {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: var(--accent);
+    color: #021206;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 800;
+    padding: 6px 12px;
+    border-radius: 100px;
+    box-shadow: 0 4px 16px var(--accent-glow);
+  }
+
+  .assigned-body { padding: 20px; flex: 1; }
+
+  .status-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    position: relative;
+  }
+  .status-stepper::before {
+    content: '';
+    position: absolute;
+    top: 16px;
+    left: 16px; right: 16px;
+    height: 2px;
+    background: var(--border);
+    z-index: 0;
+  }
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    z-index: 1;
+  }
+  .step-dot {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--bg2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    transition: all 0.4s;
+  }
+  .step.done .step-dot { border-color: var(--accent); background: var(--accent); }
+  .step.active .step-dot {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    box-shadow: 0 0 12px var(--accent-glow);
+    animation: stepPulse 1.5s ease-in-out infinite;
+  }
+  @keyframes stepPulse {
+    0%, 100% { box-shadow: 0 0 8px var(--accent-glow); }
+    50% { box-shadow: 0 0 20px var(--accent-glow); }
+  }
+  .step-label { font-size: 9px; color: var(--text2); text-align: center; font-weight: 500; }
+  .step.done .step-label, .step.active .step-label { color: var(--accent); }
+
+  .tech-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--r);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .tech-avatar {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1a3a1a, #0a1a0a);
+    border: 2px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .tech-info { flex: 1; }
+  .tech-name { font-family: var(--font-display); font-size: 16px; font-weight: 700; }
+  .tech-detail { font-size: 12px; color: var(--text2); margin-top: 3px; }
+  .tech-rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .tech-actions { display: flex; gap: 8px; }
+  .tech-action-btn {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .tech-action-btn:hover { border-color: var(--accent); }
+
+  .ticket-detail-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--r);
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .ticket-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .ticket-detail-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .ticket-detail-row .k { font-size: 12px; color: var(--text2); }
+  .ticket-detail-row .v { font-size: 13px; font-weight: 500; text-align: right; }
+  .ticket-id-tag {
+    font-family: monospace;
+    font-size: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 6px;
+    color: var(--text2);
+  }
+
+  /* ── TICKET HISTORY ──────────────────────────────────────── */
+  #history { background: var(--bg2); }
+  .history-body { padding: 16px; flex: 1; }
+
+  /* ── PROFILE ─────────────────────────────────────────────── */
+  #profile { background: var(--bg2); }
+  .profile-hero {
+    background: linear-gradient(160deg, #0f1f10 0%, #0a0f0d 100%);
+    padding: 32px 24px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .profile-avatar-big {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    border: 3px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--accent);
+    margin: 0 auto 12px;
+    box-shadow: 0 0 24px var(--accent-glow);
+  }
+  .profile-name {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .profile-phone { font-size: 13px; color: var(--text2); margin-top: 4px; }
+  .profile-stats {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    margin-top: 20px;
+  }
+  .p-stat { text-align: center; }
+  .p-stat .num {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .p-stat .lab { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .profile-body { padding: 20px; }
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--r);
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .menu-item:hover { border-color: var(--border2); }
+  .menu-icon {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    background: var(--bg3);
+  }
+  .menu-text { flex: 1; }
+  .menu-text .mt { font-size: 14px; font-weight: 600; }
+  .menu-text .ms { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .menu-arrow { color: var(--text3); font-size: 14px; }
+
+  /* ── BOTTOM NAV ──────────────────────────────────────────── */
+  .bottom-nav {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 10px 8px 24px;
+    z-index: 20;
+    backdrop-filter: blur(16px);
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 4px;
+    cursor: pointer;
+    transition: all var(--transition);
+    border-radius: 12px;
+    position: relative;
+  }
+  .nav-item.active { background: var(--accent-dim); }
+  .nav-icon { font-size: 22px; line-height: 1; }
+  .nav-label { font-size: 10px; font-weight: 600; color: var(--text2); letter-spacing: 0.3px; }
+  .nav-item.active .nav-label { color: var(--accent); }
+  .nav-badge {
+    position: absolute;
+    top: 4px; right: 8px;
+    width: 16px; height: 16px;
+    background: var(--err);
+    border-radius: 50%;
+    font-size: 9px;
+    font-weight: 700;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ── TOAST ───────────────────────────────────────────────── */
+  .toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    background: var(--card);
+    border: 1.5px solid var(--border2);
+    border-radius: 100px;
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    z-index: 100;
+    white-space: nowrap;
+    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    max-width: 90%;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: rgba(0,232,122,0.3); }
+  .toast.error { border-color: rgba(255,92,92,0.3); }
+
+  /* ── DIVIDER ─────────────────────────────────────────────── */
+  .divider {
+    height: 8px;
+    background: var(--bg);
+    margin: 0 0 4px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── UTILS ───────────────────────────────────────────────── */
+  .spacer { height: 12px; }
+  .text-accent { color: var(--accent); }
+  .text-warn { color: var(--warn); }
+  .text-err { color: var(--err); }
+  .text-muted { color: var(--text2); }
+  .fw-bold { font-weight: 700; }
+  .mt-8 { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+  .loading-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin: 0 2px;
+    animation: loadDot 1.4s ease-in-out infinite both;
+  }
+  .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes loadDot {
+    0%, 80%, 100% { transform: scale(0.5); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="phone" id="app">
+
+  <!-- ═══════════════ SPLASH ═══════════════ -->
+  <div class="screen active" id="splash">
+    <div class="splash-pulse"></div>
+    <div class="splash-pulse"></div>
+    <div class="splash-pulse"></div>
+    <div class="splash-logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 28L20 8L32 28H8Z" fill="#021206" stroke="#021206" stroke-width="1"/>
+          <path d="M20 10L30 27H10L20 10Z" fill="#021206"/>
+          <path d="M16 20H24M20 16V24" stroke="#021206" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M20 8L30 24H10L20 8Z" fill="none" stroke="#021206" stroke-width="2"/>
+          <circle cx="20" cy="20" r="5" fill="#021206"/>
+          <path d="M17 20L20 17L23 20L20 23L17 20Z" fill="white"/>
+        </svg>
+      </div>
+      <div class="logo-name">Tri<span>EV</span></div>
+      <div class="logo-tagline">EV Roadside Assistance · Always On</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ AUTH ═══════════════ -->
+  <div class="screen" id="auth">
+    <div class="auth-hero">
+      <div class="auth-hero-grid"></div>
+      <h1>Fast help<br/>for your <em>EV.</em></h1>
+      <p>Get connected to a certified technician<br/>in under 3 minutes, anywhere.</p>
+    </div>
+    <div class="auth-body" id="auth-phone-step">
+      <h2>Enter your number</h2>
+      <div class="field has-prefix">
+        <label>Mobile Number</label>
+        <span class="field-prefix">+91</span>
+        <input type="tel" id="phone-input" placeholder="9876543210" maxlength="10" />
+      </div>
+      <div class="spacer"></div>
+      <button class="btn btn-primary" onclick="sendOTP()">
+        Send OTP →
+      </button>
+      <div style="margin-top:16px; text-align:center; font-size:12px; color:var(--text2)">
+        By continuing you agree to our Terms &amp; Privacy Policy
+      </div>
+    </div>
+    <div class="auth-body" id="auth-otp-step" style="display:none">
+      <h2>Verify OTP</h2>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:20px;">
+        Sent to +91 <span id="otp-phone-display" style="color:var(--text); font-weight:600"></span>
+      </div>
+      <div class="otp-row">
+        <input type="number" class="otp-box" maxlength="1" />
+        <input type="number" class="otp-box" maxlength="1" />
+        <input type="number" class="otp-box" maxlength="1" />
+        <input type="number" class="otp-box" maxlength="1" />
+        <input type="number" class="otp-box" maxlength="1" />
+        <input type="number" class="otp-box" maxlength="1" />
+      </div>
+      <div style="margin-top:12px; font-size:12px; color:var(--text2)">
+        Didn't get it? <span style="color:var(--accent); cursor:pointer" onclick="resendOTP()">Resend OTP</span>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn btn-primary" onclick="verifyOTP()">Verify &amp; Continue →</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ HOME ═══════════════ -->
+  <div class="screen" id="home">
+    <div class="home-header">
+      <div class="home-header-row">
+        <div class="user-greeting">
+          <div class="label">Good morning,</div>
+          <div class="name">Aryan <span>Singh</span> ⚡</div>
+        </div>
+        <div class="avatar" onclick="goTo('profile')">AS</div>
+      </div>
+      <div class="ev-status-bar">
+        <div class="ev-battery">
+          <div class="battery-icon">
+            <div class="battery-fill" style="width:38%"></div>
+          </div>
+          38%
+        </div>
+        <div style="width:1px; height:16px; background:var(--border); margin: 0 4px;"></div>
+        <div class="ev-battery">📍 Jaipur, RJ</div>
+        <div class="ev-model"><strong>Nexon EV</strong></div>
+      </div>
+    </div>
+
+    <div style="overflow-y:auto; flex:1; padding-bottom: 8px;">
+      <!-- Hero CTA -->
+      <div class="hero-cta" onclick="goTo('create')">
+        <div class="hero-sos" onclick="handleSOS(event)">SOS</div>
+        <div class="hero-cta-tag">⚡ Instant Dispatch</div>
+        <h2>Need roadside<br/>assistance?</h2>
+        <p>Certified EV technicians assigned in &lt;3 minutes</p>
+        <button class="btn btn-primary" style="width:auto; padding:12px 24px; font-size:14px;">Raise Ticket →</button>
+      </div>
+
+      <!-- Quick Services -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">Quick Services</div>
+        </div>
+        <div class="service-grid">
+          <div class="service-item" onclick="quickService('Battery')">
+            <div class="icon">🔋</div>
+            <div class="label">Battery Dead</div>
+          </div>
+          <div class="service-item" onclick="quickService('Tyre')">
+            <div class="icon">🛞</div>
+            <div class="label">Flat Tyre</div>
+          </div>
+          <div class="service-item" onclick="quickService('Charging')">
+            <div class="icon">⚡</div>
+            <div class="label">Charge Port</div>
+          </div>
+          <div class="service-item" onclick="quickService('Tow')">
+            <div class="icon">🚛</div>
+            <div class="label">Towing</div>
+          </div>
+          <div class="service-item" onclick="quickService('Software')">
+            <div class="icon">💻</div>
+            <div class="label">Software</div>
+          </div>
+          <div class="service-item" onclick="quickService('Electrical')">
+            <div class="icon">🔌</div>
+            <div class="label">Electrical</div>
+          </div>
+          <div class="service-item" onclick="quickService('Motor')">
+            <div class="icon">⚙️</div>
+            <div class="label">Motor Issue</div>
+          </div>
+          <div class="service-item" onclick="quickService('Other')">
+            <div class="icon">🔧</div>
+            <div class="label">Other</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Recent tickets -->
+      <div class="section" style="padding-top:16px">
+        <div class="section-header">
+          <div class="section-title">Recent Tickets</div>
+          <span class="section-link" onclick="goTo('history')">See all</span>
+        </div>
+        <div id="recent-tickets-list"></div>
+      </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="setNav(this, 'home')">
+        <div class="nav-icon">🏠</div>
+        <div class="nav-label">Home</div>
+      </div>
+      <div class="nav-item" onclick="setNav(this, 'create')">
+        <div class="nav-icon">➕</div>
+        <div class="nav-label">New</div>
+      </div>
+      <div class="nav-item" onclick="setNav(this, 'history')">
+        <div class="nav-icon">📋</div>
+        <div class="nav-label">Tickets</div>
+        <div class="nav-badge" id="ticket-badge">1</div>
+      </div>
+      <div class="nav-item" onclick="setNav(this, 'profile')">
+        <div class="nav-icon">👤</div>
+        <div class="nav-label">Profile</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ CREATE TICKET ═══════════════ -->
+  <div class="screen" id="create">
+    <div class="topbar">
+      <div class="topbar-back" onclick="goBack()">←</div>
+      <div class="topbar-title">New Ticket</div>
+      <div style="font-size:11px; color:var(--text2);" id="ticket-ref-display"></div>
+    </div>
+
+    <div class="create-body">
+
+      <!-- Issue Type -->
+      <div class="field">
+        <label>Issue Type *</label>
+        <div class="issue-grid" id="issue-grid">
+          <div class="issue-option" onclick="selectIssue(this,'Battery Dead','🔋','battery_swap')">
+            <div class="icon">🔋</div>
+            <div class="text"><div class="name">Battery Dead</div><div class="sub">No charge, won't start</div></div>
+            <div class="issue-check"></div>
+          </div>
+          <div class="issue-option" onclick="selectIssue(this,'Flat Tyre','🛞','tire_change')">
+            <div class="icon">🛞</div>
+            <div class="text"><div class="name">Flat Tyre</div><div class="sub">Puncture / blowout</div></div>
+            <div class="issue-check"></div>
+          </div>
+          <div class="issue-option" onclick="selectIssue(this,'Charging Port','⚡','charging_port')">
+            <div class="icon">⚡</div>
+            <div class="text"><div class="name">Charge Port</div><div class="sub">Port damaged / stuck</div></div>
+            <div class="issue-check"></div>
+          </div>
+          <div class="issue-option" onclick="selectIssue(this,'Towing','🚛','towing')">
+            <div class="icon">🚛</div>
+            <div class="text"><div class="name">Towing</div><div class="sub">Vehicle can't move</div></div>
+            <div class="issue-check"></div>
+          </div>
+          <div class="issue-option" onclick="selectIssue(this,'Electrical Issue','🔌','electrical')">
+            <div class="icon">🔌</div>
+            <div class="text"><div class="name">Electrical</div><div class="sub">Wiring / fuse issue</div></div>
+            <div class="issue-check"></div>
+          </div>
+          <div class="issue-option" onclick="selectIssue(this,'Other Issue','🔧','other')">
+            <div class="icon">🔧</div>
+            <div class="text"><div class="name">Other</div><div class="sub">Describe below</div></div>
+            <div class="issue-check"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <!-- Description -->
+      <div class="field">
+        <label>Description (optional)</label>
+        <textarea id="desc-input" placeholder="Describe what happened — any warning lights, sounds, or error codes shown on display…"></textarea>
+      </div>
+
+      <!-- Vehicle -->
+      <div class="field">
+        <label>Vehicle</label>
+        <select id="vehicle-input">
+          <option value="Nexon EV">Tata Nexon EV</option>
+          <option value="Tiago EV">Tata Tiago EV</option>
+          <option value="ZS EV">MG ZS EV</option>
+          <option value="Kona EV">Hyundai Kona EV</option>
+          <option value="eC3">Citroën eC3</option>
+          <option value="Other EV">Other EV</option>
+        </select>
+      </div>
+
+      <!-- Location -->
+      <div class="field">
+        <label>Your Location</label>
+        <div class="location-box">
+          <div class="location-dot"></div>
+          <div class="location-text">
+            <div class="addr" id="loc-address">Detecting location…</div>
+            <div class="coords" id="loc-coords"></div>
+          </div>
+          <button class="location-refresh" id="loc-refresh-btn" onclick="refreshLocation()">↻</button>
+        </div>
+      </div>
+
+      <!-- Priority -->
+      <div class="field">
+        <label>Priority</label>
+        <div class="priority-row">
+          <div class="priority-btn p-NORMAL selected" onclick="selectPriority(this,'NORMAL')">Normal</div>
+          <div class="priority-btn p-HIGH" onclick="selectPriority(this,'HIGH')">High 🔶</div>
+          <div class="priority-btn p-CRITICAL" onclick="selectPriority(this,'CRITICAL')">Critical 🆘</div>
+        </div>
+      </div>
+
+      <!-- Photo -->
+      <div class="field">
+        <label>Attach Photo (optional)</label>
+        <div class="photo-upload" id="photo-drop">
+          <input type="file" accept="image/*" multiple onchange="handlePhotos(event)" />
+          <div class="up-icon">📷</div>
+          <div class="up-text">Tap to upload · <strong>Max 3 photos</strong></div>
+        </div>
+        <div class="photo-preview" id="photo-preview"></div>
+      </div>
+
+    </div>
+
+    <div class="submit-area">
+      <div class="submit-est">
+        <span class="label">Estimated response time</span>
+        <span class="val" id="eta-estimate">~4–8 min</span>
+      </div>
+      <button class="btn btn-primary" onclick="submitTicket()">
+        ⚡ Dispatch Technician
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SEARCHING ═══════════════ -->
+  <div class="screen" id="searching">
+    <div class="radar-wrap">
+      <div class="radar-ring"></div>
+      <div class="radar-ring"></div>
+      <div class="radar-ring"></div>
+      <div class="radar-sweep"></div>
+      <div class="radar-center">⚡</div>
+    </div>
+
+    <div class="searching-title">Finding Technician</div>
+    <div class="searching-sub">Scanning <span id="search-radius">5km</span> radius for available EV specialists</div>
+
+    <div class="searching-stats">
+      <div class="stat-pill">🔍 Radius: <strong id="search-radius-stat">5 km</strong></div>
+      <div class="stat-pill">👷 Found: <strong id="search-count">0</strong></div>
+    </div>
+
+    <div class="searching-progress">
+      <div class="searching-bar"></div>
+    </div>
+    <div class="searching-hint" id="searching-hint">Scanning for specialists with required skills…</div>
+
+    <div style="margin-top:32px; width:100%;">
+      <button class="btn btn-ghost" onclick="cancelSearch()" style="width:auto; margin:0 auto; padding:12px 28px; display:flex;">
+        Cancel Request
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ ASSIGNED ═══════════════ -->
+  <div class="screen" id="assigned">
+    <div class="topbar">
+      <div class="topbar-logo">Tri<span>EV</span></div>
+      <div style="flex:1"></div>
+      <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--accent); font-weight:600;">
+        <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dotPulse 1.5s infinite;"></div>
+        LIVE
+      </div>
+    </div>
+
+    <!-- Map placeholder -->
+    <div class="assigned-map">
+      <div class="map-bg"></div>
+      <div class="map-pin">📍</div>
+      <div class="map-route"></div>
+      <div class="map-eta-chip" id="map-eta">⏱ 6 min</div>
+    </div>
+
+    <div class="assigned-body" style="overflow-y:auto; flex:1;">
+      <!-- Status stepper -->
+      <div class="status-stepper" id="status-stepper">
+        <div class="step done">
+          <div class="step-dot">✓</div>
+          <div class="step-label">Ticket<br/>Raised</div>
+        </div>
+        <div class="step done">
+          <div class="step-dot">✓</div>
+          <div class="step-label">Tech<br/>Assigned</div>
+        </div>
+        <div class="step active">
+          <div class="step-dot">🚗</div>
+          <div class="step-label">On The<br/>Way</div>
+        </div>
+        <div class="step">
+          <div class="step-dot">🔧</div>
+          <div class="step-label">Arrived</div>
+        </div>
+        <div class="step">
+          <div class="step-dot">✅</div>
+          <div class="step-label">Resolved</div>
+        </div>
+      </div>
+
+      <!-- Technician Card -->
+      <div class="tech-card">
+        <div class="tech-avatar" id="tech-avatar">RK</div>
+        <div class="tech-info">
+          <div class="tech-name" id="tech-name">Rahul Kumar</div>
+          <div class="tech-detail" id="tech-detail">EV Specialist · 6.2 km away</div>
+          <div class="tech-rating">★ <span id="tech-rating">4.8</span></div>
+        </div>
+        <div class="tech-actions">
+          <div class="tech-action-btn" onclick="callTech()" title="Call">📞</div>
+          <div class="tech-action-btn" onclick="msgTech()" title="Message">💬</div>
+        </div>
+      </div>
+
+      <!-- Ticket detail -->
+      <div class="ticket-detail-card">
+        <div class="ticket-detail-row">
+          <span class="k">Ticket ID</span>
+          <span class="ticket-id-tag" id="detail-ticket-id">#TRV-0001</span>
+        </div>
+        <div class="ticket-detail-row">
+          <span class="k">Issue</span>
+          <span class="v" id="detail-issue">Battery Dead</span>
+        </div>
+        <div class="ticket-detail-row">
+          <span class="k">Vehicle</span>
+          <span class="v" id="detail-vehicle">Nexon EV</span>
+        </div>
+        <div class="ticket-detail-row">
+          <span class="k">Priority</span>
+          <span class="v" id="detail-priority">Normal</span>
+        </div>
+        <div class="ticket-detail-row">
+          <span class="k">Location</span>
+          <span class="v" style="max-width:180px; text-align:right;" id="detail-location">Malviya Nagar, Jaipur</span>
+        </div>
+        <div class="ticket-detail-row">
+          <span class="k">ETA</span>
+          <span class="v text-accent" id="detail-eta">~6 minutes</span>
+        </div>
+      </div>
+
+      <!-- Share location btn -->
+      <button class="btn btn-ghost" onclick="shareLocation()" style="margin-bottom:16px;">
+        📍 Share Live Location with Tech
+      </button>
+
+      <button class="btn" style="background:rgba(255,92,92,0.1); color:var(--err); border:1.5px solid rgba(255,92,92,0.2);" onclick="cancelTicket()">
+        Cancel Ticket
+      </button>
+
+      <div style="height:24px;"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ HISTORY ═══════════════ -->
+  <div class="screen" id="history">
+    <div class="topbar">
+      <div class="topbar-back" onclick="goBack()">←</div>
+      <div class="topbar-title">My Tickets</div>
+    </div>
+    <div class="history-body">
+      <div id="all-tickets-list"></div>
+    </div>
+    <!-- Bottom Nav -->
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="setNav(this,'home')">
+        <div class="nav-icon">🏠</div><div class="nav-label">Home</div>
+      </div>
+      <div class="nav-item" onclick="setNav(this,'create')">
+        <div class="nav-icon">➕</div><div class="nav-label">New</div>
+      </div>
+      <div class="nav-item active" onclick="setNav(this,'history')">
+        <div class="nav-icon">📋</div><div class="nav-label">Tickets</div>
+      </div>
+      <div class="nav-item" onclick="setNav(this,'profile')">
+        <div class="nav-icon">👤</div><div class="nav-label">Profile</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ PROFILE ═══════════════ -->
+  <div class="screen" id="profile">
+    <div class="profile-hero">
+      <div class="profile-avatar-big">AS</div>
+      <div class="profile-name">Aryan Singh</div>
+      <div class="profile-phone">+91 98765 43210 · Jaipur, RJ</div>
+      <div class="profile-stats">
+        <div class="p-stat"><div class="num">7</div><div class="lab">Tickets</div></div>
+        <div class="p-stat"><div class="num">4.9★</div><div class="lab">Rating</div></div>
+        <div class="p-stat"><div class="num">1</div><div class="lab">Active</div></div>
+      </div>
+    </div>
+    <div class="profile-body" style="overflow-y:auto; flex:1; padding-bottom:100px;">
+      <div class="menu-item">
+        <div class="menu-icon">🚗</div>
+        <div class="menu-text"><div class="mt">My Vehicles</div><div class="ms">Nexon EV · MH 12 AB 3456</div></div>
+        <div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon">📍</div>
+        <div class="menu-text"><div class="mt">Saved Locations</div><div class="ms">Home, Office, Gym</div></div>
+        <div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon">🔔</div>
+        <div class="menu-text"><div class="mt">Notifications</div><div class="ms">All alerts enabled</div></div>
+        <div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon">🛡️</div>
+        <div class="menu-text"><div class="mt">EV Protection Plan</div><div class="ms">Active · 8 months left</div></div>
+        <div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon">💳</div>
+        <div class="menu-text"><div class="mt">Payment Methods</div><div class="ms">UPI · Credit Card</div></div>
+        <div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon">❓</div>
+        <div class="menu-text"><div class="mt">Help &amp; Support</div><div class="ms">Chat, call, FAQ</div></div>
+        <div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-item" onclick="logout()">
+        <div class="menu-icon">🚪</div>
+        <div class="menu-text"><div class="mt" style="color:var(--err);">Sign Out</div><div class="ms">+91 98765 43210</div></div>
+        <div class="menu-arrow">›</div>
+      </div>
+    </div>
+    <!-- Bottom Nav -->
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="setNav(this,'home')">
+        <div class="nav-icon">🏠</div><div class="nav-label">Home</div>
+      </div>
+      <div class="nav-item" onclick="setNav(this,'create')">
+        <div class="nav-icon">➕</div><div class="nav-label">New</div>
+      </div>
+      <div class="nav-item" onclick="setNav(this,'history')">
+        <div class="nav-icon">📋</div><div class="nav-label">Tickets</div>
+      </div>
+      <div class="nav-item active" onclick="setNav(this,'profile')">
+        <div class="nav-icon">👤</div><div class="nav-label">Profile</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   TriEV Rider App — State Machine + Logic
+═══════════════════════════════════════════════════════════ */
+
+// ── STATE ──────────────────────────────────────────────────
+const state = {
+  currentScreen: 'splash',
+  previousScreen: null,
+  user: { name: 'Aryan Singh', phone: '9876543210', initials: 'AS' },
+  location: { lat: 26.8467, lng: 75.8001, address: 'Malviya Nagar, Jaipur, RJ' },
+  selectedIssue: null,
+  selectedPriority: 'NORMAL',
+  photos: [],
+  currentTicket: null,
+  tickets: [
+    {
+      id: 'TRV-0012',
+      type: 'Flat Tyre',
+      icon: '🛞',
+      status: 'RESOLVED',
+      date: '18 Feb 2025',
+      address: 'C-Scheme, Jaipur',
+      technician: 'Mohan Das',
+      rating: 5,
+      vehicle: 'Nexon EV',
+      priority: 'NORMAL',
+    },
+    {
+      id: 'TRV-0009',
+      type: 'Battery Dead',
+      icon: '🔋',
+      status: 'RESOLVED',
+      date: '3 Jan 2025',
+      address: 'Vaishali Nagar, Jaipur',
+      technician: 'Sanjay Meena',
+      vehicle: 'Nexon EV',
+      priority: 'HIGH',
+    }
+  ],
+  searchInterval: null,
+  etaInterval: null,
+  etaSeconds: 360,
+};
+
+// ── SCREEN NAVIGATION ──────────────────────────────────────
+function goTo(id, skipHistory = false) {
+  const prev = document.getElementById(state.currentScreen);
+  const next = document.getElementById(id);
+  if (!next || id === state.currentScreen) return;
+
+  if (!skipHistory) state.previousScreen = state.currentScreen;
+
+  prev.classList.add('exit');
+  prev.classList.remove('active');
+  setTimeout(() => { prev.classList.remove('exit'); }, 350);
+
+  next.style.transform = 'translateX(40px)';
+  requestAnimationFrame(() => {
+    next.classList.add('active');
+    next.style.transform = '';
+  });
+
+  state.currentScreen = id;
+
+  // Screen-specific init
+  if (id === 'home') renderRecentTickets();
+  if (id === 'history') renderAllTickets();
+  if (id === 'create') initCreateScreen();
+}
+
+function goBack() {
+  if (state.previousScreen) {
+    goTo(state.previousScreen, true);
+    state.previousScreen = null;
+  } else {
+    goTo('home');
+  }
+}
+
+// ── SPLASH SEQUENCE ─────────────────────────────────────────
+setTimeout(() => goTo('auth'), 2200);
+
+// ── AUTH ───────────────────────────────────────────────────
+function sendOTP() {
+  const phone = document.getElementById('phone-input').value.trim();
+  if (phone.length !== 10 || !/^\d+$/.test(phone)) {
+    showToast('⚠️ Enter a valid 10-digit number', 'error');
+    return;
+  }
+  document.getElementById('otp-phone-display').textContent = phone;
+  document.getElementById('auth-phone-step').style.display = 'none';
+  document.getElementById('auth-otp-step').style.display = 'block';
+  showToast('✅ OTP sent to +91 ' + phone);
+  // Auto-fill demo OTP
+  setTimeout(() => {
+    const boxes = document.querySelectorAll('.otp-box');
+    const demo = ['1','2','3','4','5','6'];
+    boxes.forEach((b, i) => { b.value = demo[i]; });
+  }, 800);
+  setupOTPBoxes();
+}
+
+function setupOTPBoxes() {
+  const boxes = document.querySelectorAll('.otp-box');
+  boxes.forEach((box, i) => {
+    box.addEventListener('input', (e) => {
+      if (e.target.value.length > 1) e.target.value = e.target.value.slice(-1);
+      if (e.target.value && i < boxes.length - 1) boxes[i + 1].focus();
+    });
+    box.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !e.target.value && i > 0) boxes[i - 1].focus();
+    });
+  });
+}
+
+function verifyOTP() {
+  const boxes = document.querySelectorAll('.otp-box');
+  const otp = Array.from(boxes).map(b => b.value).join('');
+  if (otp.length < 6) { showToast('⚠️ Enter complete OTP', 'error'); return; }
+  showToast('✅ Verified! Welcome back.');
+  setTimeout(() => goTo('home'), 600);
+}
+
+function resendOTP() {
+  showToast('📨 OTP resent!');
+}
+
+// ── HOME ───────────────────────────────────────────────────
+function renderRecentTickets() {
+  const el = document.getElementById('recent-tickets-list');
+  const recent = state.tickets.slice(0, 2);
+  if (!recent.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text2);font-size:13px;padding:20px;">No tickets yet</div>';
+    return;
+  }
+  el.innerHTML = recent.map(t => ticketCardHTML(t)).join('');
+}
+
+function renderAllTickets() {
+  const el = document.getElementById('all-tickets-list');
+  if (!state.tickets.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text2);font-size:14px;padding:40px 20px;">No tickets yet.<br/><br/><span style="color:var(--accent);cursor:pointer" onclick="goTo(\'create\')">Raise your first ticket →</span></div>';
+    return;
+  }
+  el.innerHTML = state.tickets.map(t => ticketCardHTML(t, true)).join('');
+}
+
+function ticketCardHTML(t, detailed = false) {
+  return `
+  <div class="ticket-card" onclick="viewTicket('${t.id}')">
+    <div class="ticket-icon-wrap status-${t.status}">${t.icon}</div>
+    <div class="ticket-info">
+      <div class="ticket-type">${t.type}</div>
+      <div class="ticket-meta">${t.date} · ${t.address}</div>
+      ${detailed && t.technician ? `<div style="font-size:11px;color:var(--text3);margin-top:2px;">Tech: ${t.technician}</div>` : ''}
+    </div>
+    <div class="ticket-badge badge-${t.status}">${t.status}</div>
+  </div>`;
+}
+
+function viewTicket(id) {
+  const t = state.tickets.find(x => x.id === id);
+  if (!t) return;
+  if (t.status === 'ASSIGNED' || t.status === 'SEARCHING') {
+    goTo('assigned');
+  } else {
+    showToast(`#${t.id} · ${t.status}`);
+  }
+}
+
+function quickService(type) {
+  const map = {
+    'Battery': { name: 'Battery Dead', icon: '🔋', skill: 'battery_swap' },
+    'Tyre': { name: 'Flat Tyre', icon: '🛞', skill: 'tire_change' },
+    'Charging': { name: 'Charging Port', icon: '⚡', skill: 'charging_port' },
+    'Tow': { name: 'Towing', icon: '🚛', skill: 'towing' },
+    'Software': { name: 'Software Issue', icon: '💻', skill: 'software' },
+    'Electrical': { name: 'Electrical Issue', icon: '🔌', skill: 'electrical' },
+    'Motor': { name: 'Motor Issue', icon: '⚙️', skill: 'motor' },
+    'Other': { name: 'Other Issue', icon: '🔧', skill: 'other' },
+  };
+  const sel = map[type];
+  if (sel) {
+    state.selectedIssue = sel;
+    goTo('create');
+    setTimeout(() => {
+      // Auto-select the matching issue option
+      const opts = document.querySelectorAll('.issue-option');
+      opts.forEach(o => {
+        if (o.querySelector('.name')?.textContent === sel.name) o.click();
+      });
+    }, 300);
+  }
+}
+
+function handleSOS(e) {
+  e.stopPropagation();
+  state.selectedIssue = { name: 'Emergency SOS', icon: '🆘', skill: 'towing' };
+  state.selectedPriority = 'CRITICAL';
+  goTo('create');
+  setTimeout(submitTicket, 400);
+}
+
+function setNav(el, screen) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  goTo(screen);
+}
+
+// ── CREATE TICKET ──────────────────────────────────────────
+function initCreateScreen() {
+  // Generate ticket ref
+  const ref = 'TRV-' + String(Math.floor(1000 + Math.random() * 9000));
+  document.getElementById('ticket-ref-display').textContent = ref;
+
+  // Detect location
+  detectLocation();
+
+  // Re-apply pre-selection if any
+  if (state.selectedIssue) {
+    const opts = document.querySelectorAll('.issue-option');
+    opts.forEach(o => {
+      if (o.querySelector('.name')?.textContent === state.selectedIssue.name) {
+        o.classList.add('selected');
+      } else {
+        o.classList.remove('selected');
+      }
+    });
+  }
+
+  // Apply priority
+  selectPriority(
+    document.querySelector(`.priority-btn.p-${state.selectedPriority}`),
+    state.selectedPriority
+  );
+}
+
+function selectIssue(el, name, icon, skill) {
+  document.querySelectorAll('.issue-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  state.selectedIssue = { name, icon, skill };
+  updateETA();
+}
+
+function selectPriority(el, priority) {
+  document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('selected'));
+  if (el) el.classList.add('selected');
+  state.selectedPriority = priority;
+  updateETA();
+}
+
+function updateETA() {
+  const etas = { NORMAL: '~4–8 min', HIGH: '~2–5 min', CRITICAL: '~1–3 min' };
+  document.getElementById('eta-estimate').textContent = etas[state.selectedPriority] || '~4–8 min';
+}
+
+function detectLocation() {
+  const addrEl = document.getElementById('loc-address');
+  const coordEl = document.getElementById('loc-coords');
+  addrEl.textContent = 'Detecting…';
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        state.location.lat = pos.coords.latitude.toFixed(6);
+        state.location.lng = pos.coords.longitude.toFixed(6);
+        addrEl.textContent = state.location.address;
+        coordEl.textContent = `${state.location.lat}, ${state.location.lng}`;
+      },
+      () => {
+        addrEl.textContent = state.location.address;
+        coordEl.textContent = `${state.location.lat}, ${state.location.lng}`;
+      },
+      { timeout: 5000 }
+    );
+  } else {
+    addrEl.textContent = state.location.address;
+    coordEl.textContent = `${state.location.lat}, ${state.location.lng}`;
+  }
+}
+
+function refreshLocation() {
+  const btn = document.getElementById('loc-refresh-btn');
+  btn.classList.add('spin');
+  detectLocation();
+  showToast('📍 Location refreshed');
+  setTimeout(() => btn.classList.remove('spin'), 600);
+}
+
+function handlePhotos(e) {
+  const files = Array.from(e.target.files).slice(0, 3);
+  state.photos = files;
+  const preview = document.getElementById('photo-preview');
+  preview.innerHTML = '';
+  files.forEach(f => {
+    const url = URL.createObjectURL(f);
+    const img = document.createElement('img');
+    img.src = url;
+    img.className = 'photo-thumb';
+    preview.appendChild(img);
+  });
+  if (files.length) showToast(`📷 ${files.length} photo(s) attached`);
+}
+
+function submitTicket() {
+  if (!state.selectedIssue) {
+    showToast('⚠️ Please select an issue type', 'error');
+    return;
+  }
+
+  const ticket = {
+    id: 'TRV-' + String(Math.floor(1000 + Math.random() * 9000)),
+    type: state.selectedIssue.name,
+    icon: state.selectedIssue.icon,
+    skill: state.selectedIssue.skill,
+    description: document.getElementById('desc-input')?.value || '',
+    vehicle: document.getElementById('vehicle-input')?.value || 'Nexon EV',
+    location: { ...state.location },
+    priority: state.selectedPriority,
+    status: 'SEARCHING',
+    date: new Date().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }),
+    address: state.location.address,
+    createdAt: Date.now(),
+  };
+
+  state.currentTicket = ticket;
+  state.tickets.unshift(ticket);
+
+  // Update badge
+  const badge = document.getElementById('ticket-badge');
+  if (badge) badge.textContent = state.tickets.filter(t => t.status !== 'RESOLVED').length;
+
+  goTo('searching');
+  startSearch(ticket);
+}
+
+// ── DISPATCH SIMULATION ────────────────────────────────────
+function startSearch(ticket) {
+  let radius = 5;
+  let count = 0;
+  let attempt = 0;
+  const hints = [
+    'Scanning for specialists with required skills…',
+    'Ranking technicians by distance & skill…',
+    'Optimizing assignment for fastest response…',
+    'Verifying technician availability…',
+    'Sending dispatch request…',
+  ];
+
+  document.getElementById('search-radius').textContent = radius + 'km';
+  document.getElementById('search-radius-stat').textContent = radius + ' km';
+  document.getElementById('search-count').textContent = 0;
+
+  state.searchInterval = setInterval(() => {
+    attempt++;
+    count = Math.min(count + Math.floor(Math.random() * 3) + 1, 12);
+    document.getElementById('search-count').textContent = count;
+    document.getElementById('searching-hint').textContent = hints[Math.min(attempt - 1, hints.length - 1)];
+
+    if (attempt === 2) {
+      radius = 10;
+      document.getElementById('search-radius').textContent = radius + 'km';
+      document.getElementById('search-radius-stat').textContent = radius + ' km';
+    }
+
+    // After ~3 seconds, assign technician
+    if (attempt >= 4) {
+      clearInterval(state.searchInterval);
+      assignTechnician(ticket);
+    }
+  }, 750);
+}
+
+function assignTechnician(ticket) {
+  const technicians = [
+    { name: 'Rahul Kumar', initials: 'RK', rating: 4.8, dist: 6.2, exp: '4 yrs' },
+    { name: 'Sanjay Meena', initials: 'SM', rating: 4.9, dist: 3.8, exp: '6 yrs' },
+    { name: 'Priya Sharma', initials: 'PS', rating: 4.7, dist: 8.1, exp: '3 yrs' },
+    { name: 'Vikram Singh', initials: 'VS', rating: 5.0, dist: 5.5, exp: '8 yrs' },
+  ];
+  const tech = technicians[Math.floor(Math.random() * technicians.length)];
+  const etaMin = Math.ceil(tech.dist / 1.2);
+
+  ticket.status = 'ASSIGNED';
+  ticket.technician = tech.name;
+
+  // Populate assigned screen
+  document.getElementById('tech-avatar').textContent = tech.initials;
+  document.getElementById('tech-name').textContent = tech.name;
+  document.getElementById('tech-detail').textContent = `EV Specialist · ${tech.dist} km away · ${tech.exp} exp`;
+  document.getElementById('tech-rating').textContent = tech.rating;
+  document.getElementById('map-eta').textContent = `⏱ ${etaMin} min`;
+  document.getElementById('detail-ticket-id').textContent = '#' + ticket.id;
+  document.getElementById('detail-issue').textContent = ticket.type;
+  document.getElementById('detail-vehicle').textContent = ticket.vehicle;
+  document.getElementById('detail-priority').textContent = ticket.priority;
+  document.getElementById('detail-location').textContent = ticket.address;
+  document.getElementById('detail-eta').textContent = `~${etaMin} minutes`;
+
+  state.etaSeconds = etaMin * 60;
+
+  showToast(`✅ ${tech.name} assigned! ETA ${etaMin} min`, 'success');
+  goTo('assigned');
+  startETACountdown();
+}
+
+function startETACountdown() {
+  if (state.etaInterval) clearInterval(state.etaInterval);
+  state.etaInterval = setInterval(() => {
+    state.etaSeconds = Math.max(0, state.etaSeconds - 5);
+    const min = Math.floor(state.etaSeconds / 60);
+    const sec = state.etaSeconds % 60;
+    const display = state.etaSeconds > 60
+      ? `⏱ ${min} min`
+      : `⏱ ${state.etaSeconds}s`;
+    const el = document.getElementById('map-eta');
+    if (el) el.textContent = display;
+    const detEl = document.getElementById('detail-eta');
+    if (detEl) detEl.textContent = state.etaSeconds > 60 ? `~${min} minutes` : `~${state.etaSeconds} seconds`;
+
+    if (state.etaSeconds === 0) {
+      clearInterval(state.etaInterval);
+      showToast('🔧 Technician has arrived!');
+      // Advance stepper
+      advanceStepper();
+    }
+  }, 5000); // Update every 5 seconds (simulated)
+}
+
+function advanceStepper() {
+  const steps = document.querySelectorAll('#status-stepper .step');
+  let activeIdx = Array.from(steps).findIndex(s => s.classList.contains('active'));
+  if (activeIdx < steps.length - 1) {
+    steps[activeIdx].classList.remove('active');
+    steps[activeIdx].classList.add('done');
+    steps[activeIdx].querySelector('.step-dot').textContent = '✓';
+    steps[activeIdx + 1].classList.add('active');
+  }
+}
+
+function cancelSearch() {
+  clearInterval(state.searchInterval);
+  if (state.currentTicket) {
+    state.tickets = state.tickets.filter(t => t.id !== state.currentTicket.id);
+    state.currentTicket = null;
+  }
+  showToast('Request cancelled');
+  goTo('home');
+}
+
+function cancelTicket() {
+  if (state.currentTicket) {
+    state.currentTicket.status = 'RESOLVED';
+    state.currentTicket.type = '[Cancelled] ' + state.currentTicket.type;
+  }
+  clearInterval(state.etaInterval);
+  showToast('Ticket cancelled');
+  goTo('home');
+}
+
+function callTech() { showToast('📞 Calling technician…'); }
+function msgTech() { showToast('💬 Opening chat…'); }
+function shareLocation() { showToast('📍 Live location shared!'); }
+
+// ── PROFILE ────────────────────────────────────────────────
+function logout() {
+  showToast('👋 Signed out');
+  setTimeout(() => goTo('auth'), 700);
+}
+
+// ── TOAST ──────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg, type = 'default') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type}`;
+  t.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
